@@ -39,6 +39,9 @@ docker run -d \
   --name gcs-proxy \
   --restart always \
   --network host \
+  --log-driver=gcplogs \
+  --log-opt gcp-log-cmd=true \
+  --log-opt gcp-project=${project_id} \
   -e PORT=8080 \
   -e RUST_LOG=info \
   gcr.io/${project_id}/gcs-proxy:latest
@@ -67,6 +70,9 @@ docker run -d \
   --name envoy \
   --network host \
   --restart always \
+  --log-driver=gcplogs \
+  --log-opt gcp-log-cmd=true \
+  --log-opt gcp-project=${project_id} \
   -v /opt/envoy/envoy.yaml:/etc/envoy/envoy.yaml \
   -v /opt/envoy/tenant-router.wasm:/opt/envoy/tenant-router.wasm \
   envoyproxy/envoy:v1.28-latest \

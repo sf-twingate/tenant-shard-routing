@@ -16,6 +16,9 @@ docker run -d \
   --name tenant-lookup \
   --restart always \
   --network host \
+  --log-driver=gcplogs \
+  --log-opt gcp-log-cmd=true \
+  --log-opt gcp-project=${project_id} \
   -e GCS_BUCKET=${gcs_bucket_name} \
   -e DEFAULT_SHARD=${default_shard} \
   -e CACHE_TTL=300 \
@@ -52,6 +55,9 @@ docker run -d \
   --name envoy \
   --network host \
   --restart always \
+  --log-driver=gcplogs \
+  --log-opt gcp-log-cmd=true \
+  --log-opt gcp-project=${project_id} \
   -v /opt/envoy/envoy.yaml:/etc/envoy/envoy.yaml \
   envoyproxy/envoy:v1.28-latest \
   /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
