@@ -49,6 +49,10 @@ else
 fi
 echo "Load Balancer IP: ${LB_IP:-Not available}"
 echo ""
+
+# Show current tenant mappings
+"$SCRIPT_DIR/show-tenant-mappings-compact.sh"
+echo ""
 echo "Note: This test assumes you have set up tenant mappings."
 echo "Run ./setup-test-mappings.sh if you haven't already."
 echo ""

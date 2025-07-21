@@ -152,6 +152,10 @@ echo ""
 echo "🔧 Setting up test tenant mappings..."
 "$SCRIPT_DIR/setup-test-mappings.sh"
 
+# Show current mappings before tests
+echo ""
+"$SCRIPT_DIR/show-tenant-mappings-compact.sh"
+
 # Run tests
 echo ""
 echo "🧪 Running tests..."
