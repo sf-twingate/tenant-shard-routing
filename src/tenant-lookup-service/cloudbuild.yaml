@@ -1,0 +1,23 @@
+steps:
+  # Build the Rust binary in Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'tenant-lookup-builder', '-f', 'tenant-lookup-service/Dockerfile', '--target', 'builder', 'tenant-lookup-service']
+  
+  # Extract the binary from the builder image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        docker create --name extract tenant-lookup-builder
+        docker cp extract:/usr/src/app/target/release/tenant-lookup ./tenant-lookup
+        docker rm extract
+  
+  # Upload the binary to GCS
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['storage', 'cp', './tenant-lookup', 'gs://${_GCS_BUCKET}/binaries/tenant-lookup']
+
+substitutions:
+  _GCS_BUCKET: 'tenant-routing-data'  # Will be overridden by Terraform
+
+timeout: '1200s'

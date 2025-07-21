@@ -1,0 +1,20 @@
+# Terraform
+src/terraform/.terraform/
+src/terraform/*.tfstate
+src/terraform/*.tfstate.*
+src/terraform/.terraform.lock.hcl
+src/terraform/terraform.tfvars
+
+# Rust/WASM
+src/wasm-filter/target/
+src/gcs-proxy/target/
+src/tenant-routing-core/target/
+src/tenant-lookup-service/target/
+src/*.wasm
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

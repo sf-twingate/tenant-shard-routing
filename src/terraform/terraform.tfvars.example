@@ -1,0 +1,32 @@
+# Example Terraform variables for tenant routing with WASM
+# Copy this to terraform.tfvars and update with your values
+
+# Required: Your GCP project ID
+project_id = "your-gcp-project-id"
+
+# Optional: GCP region and zone
+# region = "us-central1"
+# zone   = "us-central1-a"
+
+# Optional: Resource name prefix
+# Useful for shared/playground environments to avoid conflicts
+# name_prefix = "tenant-routing"  # or "yourname-tenant-routing" for shared envs
+
+# Optional: Domain for SSL certificate
+# The SSL certificate will be created for this domain and *.domain
+# domain = "example.com"
+
+# Optional: List of shards to create
+# Each shard gets its own ALB with path-based routing
+# shard_names = ["shard1", "shard2"]  # add more as needed: ["shard1", "shard2", "shard3", "shard4"]
+
+# Optional: Filter implementation
+# Set to true to use Lua filter with tenant lookup service (recommended)
+# Set to false (default) to use WASM filter
+# use_lua_filter = false
+
+# Example for shared/playground environment:
+# project_id  = "my-playground-project"
+# name_prefix = "jdoe-tenant-routing"  # Use your initials/name to avoid conflicts
+# domain      = "demo.example.com"     # Or use IP-based testing
+# shard_names = ["shard1", "shard2", "shard3"]
