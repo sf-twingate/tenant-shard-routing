@@ -42,21 +42,13 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y docker.io docker-compose curl jq",
+      "sudo apt-get install -y docker.io docker-compose curl jq build-essential pkg-config libssl-dev",
       "sudo systemctl enable docker",
       "sudo systemctl start docker"
     ]
   }
 
-  # Install Rust for building the tenant lookup service
-  provisioner "shell" {
-    inline = [
-      "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
-      ". $HOME/.cargo/env"
-    ]
-  }
-
-  # Copy tenant lookup service source code
+  # Copy tenant lookup service source code for Docker build
   provisioner "file" {
     source      = "../tenant-lookup-service"
     destination = "/tmp/tenant-lookup-service"
@@ -67,23 +59,12 @@ build {
     destination = "/tmp/tenant-routing-core"
   }
 
-  # Build tenant lookup service
-  provisioner "shell" {
-    inline = [
-      "cd /tmp/tenant-lookup-service",
-      "$HOME/.cargo/bin/cargo build --release",
-      "sudo mkdir -p /opt/tenant-lookup",
-      "sudo cp target/release/tenant-lookup-service /opt/tenant-lookup/",
-      "sudo chmod 755 /opt/tenant-lookup/tenant-lookup-service"
-    ]
-  }
-
   # Create Docker image for tenant lookup service
   provisioner "shell" {
     inline = [
-      "cd /tmp/tenant-lookup-service",
-      "sudo docker build -t tenant-lookup:latest .",
-      "sudo docker tag tenant-lookup:latest gcr.io/${var.project_id}/tenant-lookup:latest"
+      "cd /tmp",
+      "sudo docker build -t tenant-lookup-service:latest -f tenant-lookup-service/Dockerfile .",
+      "sudo docker tag tenant-lookup-service:latest gcr.io/${var.project_id}/tenant-lookup-service:latest"
     ]
   }
 
@@ -98,32 +79,7 @@ build {
   provisioner "shell" {
     inline = [
       "echo 'Pre-pulling Docker images...'",
-      "sudo docker pull envoyproxy/envoy:v1.28-latest",
-      "sudo docker pull gcr.io/${var.project_id}/gcs-proxy:latest || echo 'GCS proxy image will be pulled at runtime'"
-    ]
-  }
-
-  # Create systemd service for tenant lookup
-  provisioner "shell" {
-    inline = [
-      "sudo tee /etc/systemd/system/tenant-lookup.service > /dev/null <<EOF",
-      "[Unit]",
-      "Description=Tenant Lookup Service",
-      "After=docker.service",
-      "Requires=docker.service",
-      "",
-      "[Service]",
-      "Type=simple",
-      "Restart=always",
-      "RestartSec=5",
-      "ExecStartPre=-/usr/bin/docker stop tenant-lookup",
-      "ExecStartPre=-/usr/bin/docker rm tenant-lookup",
-      "ExecStart=/usr/bin/docker run --name tenant-lookup -p 8080:8080 --rm gcr.io/${var.project_id}/tenant-lookup:latest",
-      "",
-      "[Install]",
-      "WantedBy=multi-user.target",
-      "EOF",
-      "sudo systemctl daemon-reload"
+      "sudo docker pull envoyproxy/envoy:v1.28-latest"
     ]
   }
 
@@ -133,8 +89,7 @@ build {
       "rm -rf /tmp/tenant-lookup-service /tmp/tenant-routing-core",
       "sudo apt-get autoremove -y",
       "sudo apt-get clean",
-      "sudo rm -rf /var/lib/apt/lists/*",
-      "rm -rf ~/.cargo ~/.rustup"
+      "sudo rm -rf /var/lib/apt/lists/*"
     ]
   }
 }

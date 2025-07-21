@@ -30,13 +30,13 @@ GIT_SHA=$(git rev-parse --short HEAD)
 
 # Build using Docker - use the parent directory as context
 echo -e "${YELLOW}Building Docker image...${NC}"
-docker build -t tenant-lookup -f tenant-lookup-service/Dockerfile --platform=linux/amd64 .
+docker build -t tenant-lookup-service -f tenant-lookup-service/Dockerfile --platform=linux/amd64 .
 
 # Tag for GCR with both latest and git SHA
-GCR_IMAGE_LATEST="gcr.io/${PROJECT_ID}/tenant-lookup:latest"
-GCR_IMAGE_SHA="gcr.io/${PROJECT_ID}/tenant-lookup:${GIT_SHA}"
-docker tag tenant-lookup "$GCR_IMAGE_LATEST"
-docker tag tenant-lookup "$GCR_IMAGE_SHA"
+GCR_IMAGE_LATEST="gcr.io/${PROJECT_ID}/tenant-lookup-service:latest"
+GCR_IMAGE_SHA="gcr.io/${PROJECT_ID}/tenant-lookup-service:${GIT_SHA}"
+docker tag tenant-lookup-service "$GCR_IMAGE_LATEST"
+docker tag tenant-lookup-service "$GCR_IMAGE_SHA"
 
 # Push to GCR
 echo -e "${YELLOW}Pushing to Google Container Registry...${NC}"

@@ -32,7 +32,7 @@ FROM alpine:3.19
 RUN apk add --no-cache ca-certificates
 
 # Copy the static binary from builder
-COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/tenant-lookup /usr/local/bin/tenant-lookup
+COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/tenant-lookup-service /usr/local/bin/tenant-lookup-service
 
 # Create non-root user
 RUN adduser -D -u 1000 service
@@ -41,4 +41,4 @@ USER service
 
 EXPOSE 8080
 
-CMD ["tenant-lookup"]
+CMD ["tenant-lookup-service"]

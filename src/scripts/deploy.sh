@@ -116,9 +116,11 @@ fi
 echo "🚀 Deploying remaining infrastructure..."
 terraform apply -auto-approve -var="use_global_deployment=$USE_GLOBAL"
 
-# Build and upload tenant lookup service after infrastructure is deployed
-echo "📦 Building tenant lookup service..."
-"$SCRIPT_DIR/build-tenant-lookup.sh"
+# Build and upload tenant lookup service if needed (Lua filter without optimized image)
+if [ "$USE_LUA_FILTER" = "true" ] && [ "$USE_OPTIMIZED_IMAGE" != "true" ]; then
+    echo "📦 Building tenant lookup service..."
+    "$SCRIPT_DIR/build-tenant-lookup.sh"
+fi
 
 # Return to terraform directory to get outputs
 cd "$PROJECT_ROOT/terraform"
@@ -151,10 +153,6 @@ sleep 60
 echo ""
 echo "🔧 Setting up test tenant mappings..."
 "$SCRIPT_DIR/setup-test-mappings.sh"
-
-# Show current mappings before tests
-echo ""
-"$SCRIPT_DIR/show-tenant-mappings-compact.sh"
 
 # Run tests
 echo ""

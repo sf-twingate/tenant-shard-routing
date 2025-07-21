@@ -13,7 +13,7 @@ gcloud auth configure-docker gcr.io
 
 # Run tenant lookup service as a container
 docker run -d \
-  --name tenant-lookup \
+  --name tenant-lookup-service \
   --restart always \
   --network host \
   --log-driver=gcplogs \
@@ -24,7 +24,7 @@ docker run -d \
   -e CACHE_TTL=300 \
   -e PORT=8080 \
   -e RUST_LOG=info \
-  gcr.io/${project_id}/tenant-lookup:latest
+  gcr.io/${project_id}/tenant-lookup-service:latest
 
 # Wait for tenant lookup service to be ready
 for i in {1..30}; do
