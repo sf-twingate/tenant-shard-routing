@@ -21,7 +21,7 @@ name_prefix = "tenant-routing"  # or "yourname-tenant-routing" for shared envs
 # shard_names = ["shard1", "shard2"]  # add more as needed: ["shard1", "shard2", "shard3", "shard4"]
 
 # Optional: Filter implementation
-# Set to true to use Lua filter with tenant lookup service (recommended)
+# Set to true to use Lua filter with tenant lookup service
 # Set to false (default) to use WASM filter
 # use_lua_filter = false
 

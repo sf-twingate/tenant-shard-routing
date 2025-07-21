@@ -147,22 +147,18 @@ Test the deployment:
   - Configuration management.
   - Shard name normalization.
 - **No-std compatible**: Works in both WASM and standard environments.
-- **Comprehensive test suite**: Ensures consistency across implementations.
 
 ### 4. Terraform Infrastructure (`terraform/`)
 - **GCS Bucket**: Stores tenant-to-shard mappings.
 - **Main ALB**: Global HTTP load balancer that routes to Envoy.
 - **Envoy Instance**: Runs either WASM or Lua filter based on configuration.
 - **Shard ALBs**: Each shard has its own ALB for path-based routing.
-- **Backend Instances**: Dynamically created based on shard configuration.
-- **Modular Design**: Easy to add more shards (shard3, shard4, etc.)
 
 ### 5. Test Scripts (`scripts/`)
 - `test-deployment.sh`: Basic routing tests.
 - `test-full-architecture.sh`: Complete architecture validation including shard ALBs.
 - `deploy.sh`: One-command deployment.
 - `cleanup.sh`: Clean removal of all resources.
-- `build-tenant-lookup.sh`: Build and push tenant lookup service to GCR (Lua implementation only.)
 
 ## Setup
 
