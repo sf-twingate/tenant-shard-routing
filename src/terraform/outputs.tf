@@ -21,6 +21,16 @@ output "envoy_ip" {
   value       = var.use_global_deployment ? "" : (length(module.envoy) > 0 ? module.envoy[0].external_ip : "")
 }
 
+output "envoy_instance_name" {
+  description = "Envoy instance name (single-region only)"
+  value       = var.use_global_deployment ? "" : (length(module.envoy) > 0 ? module.envoy[0].instance_name : "")
+}
+
+output "envoy_zone" {
+  description = "Envoy instance zone (single-region only)"
+  value       = var.use_global_deployment ? "" : var.zone
+}
+
 output "gcs_bucket" {
   description = "GCS bucket name for tenant mappings"
   value       = module.gcs.bucket_name

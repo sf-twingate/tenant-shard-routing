@@ -90,6 +90,23 @@ resource "google_compute_firewall" "allow_internal" {
   ]
 }
 
+# Firewall rule to allow SSH via IAP
+resource "google_compute_firewall" "allow_iap_ssh" {
+  name    = "${var.name_prefix}-allow-iap-ssh"
+  network = google_compute_network.main.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  # IAP source range for TCP forwarding
+  source_ranges = ["35.235.240.0/20"]
+  
+  # Target all instances that might need SSH access
+  target_tags = ["envoy-router", "shard-backend"]
+}
+
 # Firewall rule for HTTP/HTTPS from load balancers
 resource "google_compute_firewall" "allow_lb" {
   name    = "${var.name_prefix}-allow-lb"
