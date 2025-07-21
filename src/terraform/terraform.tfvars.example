@@ -30,3 +30,7 @@ name_prefix = "tenant-routing"  # or "yourname-tenant-routing" for shared envs
 # name_prefix = "jdoe-tenant-routing"  # Use your initials/name to avoid conflicts
 # domain      = "demo.example.com"     # Or use IP-based testing
 # shard_names = ["shard1", "shard2", "shard3"]
+
+# Optional: Use optimized Envoy image with WASM support
+# Set to true to use the optimized image, false to use the default Ubuntu image
+# use_optimized_image = true

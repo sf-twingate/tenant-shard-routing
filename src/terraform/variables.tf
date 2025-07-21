@@ -69,3 +69,9 @@ variable "use_global_deployment" {
   type        = bool
   default     = false
 }
+
+variable "use_optimized_image" {
+  description = "Use pre-built optimized VM image with Docker pre-installed for WASM plugin"
+  type        = bool
+  default     = true
+}

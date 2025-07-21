@@ -103,3 +103,8 @@ variable "enable_cloud_armor" {
   type        = bool
   default     = true
 }
+variable "use_optimized_image" {
+  description = "Use pre-built optimized VM image with Docker pre-installed"
+  type        = bool
+  default     = false
+}

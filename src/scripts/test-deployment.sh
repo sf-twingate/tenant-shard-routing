@@ -108,7 +108,7 @@ else
     for i in {1..30}; do
         http_code=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: beamreach.example.com" "http://$LB_IP" 2>&1)
         
-        if echo "$http_code" | grep -q "200\|404\|502"; then
+        if echo "$http_code" | grep -q "200\|404\|502\|503"; then
             echo "Load balancer is responding (HTTP $http_code)"
             break
         fi

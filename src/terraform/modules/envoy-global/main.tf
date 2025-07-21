@@ -32,7 +32,9 @@ resource "google_compute_instance_template" "envoy" {
   machine_type = "e2-medium" # Will be overridden by regional configs
 
   disk {
-    source_image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    source_image = var.use_optimized_image ? (
+      var.use_lua_filter ? "${var.project_id}/envoy-lua-optimized" : "${var.project_id}/envoy-wasm-optimized"
+    ) : "ubuntu-os-cloud/ubuntu-2204-lts"
     auto_delete  = true
     boot         = true
   }
@@ -55,6 +57,12 @@ resource "google_compute_instance_template" "envoy" {
       shard_names     = var.shard_names
       shard_backends  = var.shard_backends
       project_id      = var.project_id
+    }) : var.use_optimized_image ? templatefile("${path.module}/../envoy/templates/envoy-wasm-startup-optimized.sh.tpl", {
+      envoy_config    = local.envoy_config
+      shard_names     = var.shard_names
+      shard_backends  = var.shard_backends
+      project_id      = var.project_id
+      gcs_bucket_name = var.gcs_bucket_name
     }) : templatefile("${path.module}/../envoy/templates/envoy-wasm-startup.sh.tpl", {
       envoy_config    = local.envoy_config
       shard_names     = var.shard_names
@@ -85,7 +93,9 @@ resource "google_compute_instance_template" "envoy_regional" {
   region       = each.value.region
 
   disk {
-    source_image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    source_image = var.use_optimized_image ? (
+      var.use_lua_filter ? "${var.project_id}/envoy-lua-optimized" : "${var.project_id}/envoy-wasm-optimized"
+    ) : "ubuntu-os-cloud/ubuntu-2204-lts"
     auto_delete  = true
     boot         = true
   }
@@ -107,6 +117,12 @@ resource "google_compute_instance_template" "envoy_regional" {
       shard_names     = var.shard_names
       shard_backends  = var.shard_backends
       project_id      = var.project_id
+    }) : var.use_optimized_image ? templatefile("${path.module}/../envoy/templates/envoy-wasm-startup-optimized.sh.tpl", {
+      envoy_config    = local.envoy_config
+      shard_names     = var.shard_names
+      shard_backends  = var.shard_backends
+      project_id      = var.project_id
+      gcs_bucket_name = var.gcs_bucket_name
     }) : templatefile("${path.module}/../envoy/templates/envoy-wasm-startup.sh.tpl", {
       envoy_config    = local.envoy_config
       shard_names     = var.shard_names

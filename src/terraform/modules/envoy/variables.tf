@@ -61,3 +61,9 @@ variable "project_id" {
   description = "GCP Project ID"
   type        = string
 }
+
+variable "use_optimized_image" {
+  description = "Use pre-built optimized VM image with Docker pre-installed"
+  type        = bool
+  default     = false
+}
