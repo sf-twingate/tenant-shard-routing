@@ -1,32 +1,24 @@
 #!/bin/bash
 set -e
 
-# Install Docker and build tools
+# Install Docker and required tools
 apt-get update
-apt-get install -y docker.io docker-compose curl build-essential
-
-# Install Rust (for building WASM)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "/root/.cargo/env"
-/root/.cargo/bin/rustup target add wasm32-wasip1
+apt-get install -y docker.io docker-compose curl
 
 # Create Envoy config directory
 mkdir -p /opt/envoy
 
-# Build WASM filter
-cd /tmp
-cat > Cargo.toml << 'CARGO_EOF'
-${cargo_toml}
-CARGO_EOF
+# Download pre-built WASM filter from GCS
+echo "Downloading WASM filter from GCS..."
+gsutil cp gs://${gcs_bucket_name}/wasm/tenant-router.wasm /opt/envoy/tenant-router.wasm
 
-mkdir -p src
-cat > src/lib.rs << 'RUST_EOF'
-${wasm_source}
-RUST_EOF
+# Verify WASM was downloaded
+if [ ! -f "/opt/envoy/tenant-router.wasm" ]; then
+    echo "ERROR: Failed to download WASM filter"
+    exit 1
+fi
 
-# Build the WASM module
-/root/.cargo/bin/cargo build --target wasm32-wasip1 --release
-cp target/wasm32-wasip1/release/tenant_router.wasm /opt/envoy/tenant-router.wasm
+echo "WASM filter downloaded successfully - v2"
 
 # Create Envoy config
 cat > /opt/envoy/envoy.yaml << 'ENVOY_CONFIG'
@@ -66,8 +58,8 @@ iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8000
 iptables -t nat -A OUTPUT -p tcp --dport 80 ! -d 169.254.169.254 -j REDIRECT --to-port 8000
 
 # Exclude shard ALB IPs from iptables redirect
-%{ for shard_name in shard_names ~}
-iptables -t nat -I OUTPUT 1 -p tcp -d ${shard_backends[shard_name].shard_alb_ip} -j RETURN
+%{ for shard_name, shard in shard_backends ~}
+iptables -t nat -I OUTPUT 1 -p tcp -d ${shard.shard_alb_ip} -j RETURN
 %{ endfor ~}
 
 # Run Envoy

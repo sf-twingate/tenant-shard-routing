@@ -4,13 +4,13 @@
 # Required: Your GCP project ID
 project_id = "your-gcp-project-id"
 
+# Required: Resource name prefix
+# Useful for shared/playground environments to avoid conflicts
+name_prefix = "tenant-routing"  # or "yourname-tenant-routing" for shared envs
+
 # Optional: GCP region and zone
 # region = "us-central1"
 # zone   = "us-central1-a"
-
-# Optional: Resource name prefix
-# Useful for shared/playground environments to avoid conflicts
-# name_prefix = "tenant-routing"  # or "yourname-tenant-routing" for shared envs
 
 # Optional: Domain for SSL certificate
 # The SSL certificate will be created for this domain and *.domain

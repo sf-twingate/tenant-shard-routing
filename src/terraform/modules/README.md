@@ -51,7 +51,7 @@ Deploys Envoy proxy with either WASM filter or Lua filter for tenant-based routi
 
 **Features:**
 - Supports two implementations:
-  - **WASM Filter**: Builds filter on instance, uses local proxy for GCS
+  - **WASM Filter**: Downloads pre-built filter from GCS, uses local proxy for GCS
   - **Lua Filter**: Uses containerized Rust service from GCR
 - Automatic startup script selection based on implementation
 - Configures routing rules for tenant-based sharding

@@ -22,15 +22,15 @@ fi
 
 echo -e "${YELLOW}Building Rust tenant lookup service...${NC}"
 
-# Navigate to the tenant lookup service directory
-cd "$PROJECT_ROOT/tenant-lookup-service"
+# Navigate to the parent directory to have access to both tenant-lookup-service and tenant-routing-core
+cd "$PROJECT_ROOT"
 
 # Get git SHA for tagging
 GIT_SHA=$(git rev-parse --short HEAD)
 
-# Build using Docker
+# Build using Docker - use the parent directory as context
 echo -e "${YELLOW}Building Docker image...${NC}"
-docker build -t tenant-lookup -f Dockerfile --platform=linux/amd64 .
+docker build -t tenant-lookup -f tenant-lookup-service/Dockerfile --platform=linux/amd64 .
 
 # Tag for GCR with both latest and git SHA
 GCR_IMAGE_LATEST="gcr.io/${PROJECT_ID}/tenant-lookup:latest"

@@ -42,12 +42,11 @@ resource "google_compute_instance" "envoy_router" {
       shard_backends  = var.shard_backends
       project_id      = var.project_id
     }) : templatefile("${path.module}/templates/envoy-wasm-startup.sh.tpl", {
-      envoy_config   = local.envoy_config
-      wasm_source    = file("${var.wasm_filter_path}/src/lib.rs")
-      cargo_toml     = file("${var.wasm_filter_path}/Cargo.toml")
-      shard_names    = var.shard_names
-      shard_backends = var.shard_backends
-      project_id     = var.project_id
+      envoy_config    = local.envoy_config
+      shard_names     = var.shard_names
+      shard_backends  = var.shard_backends
+      project_id      = var.project_id
+      gcs_bucket_name = var.gcs_bucket_name
     })
   }
 

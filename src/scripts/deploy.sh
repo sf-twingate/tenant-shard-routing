@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 
-echo "🚀 Deploying Tenant Routing WASM Infrastructure"
+echo "🚀 Deploying Tenant Routing Infrastructure"
 
 # Check if terraform.tfvars exists
 if [ ! -f "$PROJECT_ROOT/terraform/terraform.tfvars" ]; then
@@ -13,11 +13,62 @@ if [ ! -f "$PROJECT_ROOT/terraform/terraform.tfvars" ]; then
     exit 1
 fi
 
-# Deploy infrastructure first
+# Ask for deployment type
+echo ""
+echo "Select deployment type:"
+echo "1) Single Instance (default) - Deploy Envoy in one region"
+echo "2) Global - Deploy Envoy across multiple regions worldwide"
+echo ""
+read -p "Enter choice [1-2] (default: 1): " DEPLOYMENT_TYPE
+DEPLOYMENT_TYPE=${DEPLOYMENT_TYPE:-1}
+
+if [ "$DEPLOYMENT_TYPE" = "2" ]; then
+    echo "🌍 Deploying global multi-region infrastructure..."
+    USE_GLOBAL=true
+else
+    echo "📍 Deploying single-region infrastructure..."
+    USE_GLOBAL=false
+fi
+
+# Get project ID
+PROJECT_ID=$(gcloud config get-value project)
+
+# Build WASM first if it exists
+if [ -f "$PROJECT_ROOT/wasm-filter/build.sh" ]; then
+    echo "📦 Building WASM filter locally..."
+    cd "$PROJECT_ROOT/wasm-filter"
+    ./build.sh
+    cd "$PROJECT_ROOT"
+fi
+
+# Deploy infrastructure
 echo "🏗️  Deploying infrastructure with Terraform..."
 cd "$PROJECT_ROOT/terraform"
 terraform init
-terraform apply -auto-approve
+
+# First, create just the GCS bucket
+echo "🪣 Creating GCS bucket first..."
+terraform apply -auto-approve -target=module.gcs -var="use_global_deployment=$USE_GLOBAL"
+
+# Get the bucket name from terraform output
+GCS_BUCKET=$(terraform output -raw gcs_bucket 2>/dev/null || echo "")
+if [ -z "$GCS_BUCKET" ]; then
+    echo "❌ Failed to get GCS bucket name from terraform"
+    exit 1
+fi
+
+# Upload WASM to the GCS bucket before creating instances
+if [ -f "$PROJECT_ROOT/tenant-router.wasm" ]; then
+    echo "📤 Uploading WASM filter to GCS bucket: $GCS_BUCKET..."
+    gsutil cp "$PROJECT_ROOT/tenant-router.wasm" "gs://${GCS_BUCKET}/wasm/tenant-router.wasm"
+    echo "✅ WASM filter uploaded to gs://${GCS_BUCKET}/wasm/tenant-router.wasm"
+else
+    echo "⚠️ WASM file not found at $PROJECT_ROOT/tenant-router.wasm"
+fi
+
+# Now deploy the rest of the infrastructure
+echo "🚀 Deploying remaining infrastructure..."
+terraform apply -auto-approve -var="use_global_deployment=$USE_GLOBAL"
 
 # Build and upload tenant lookup service after infrastructure is deployed
 echo "📦 Building tenant lookup service..."
@@ -32,8 +83,22 @@ else
     echo "⚠️  WASM build script not found, WASM will be built on Envoy instance"
 fi
 
+# Return to terraform directory to get outputs
+cd "$PROJECT_ROOT/terraform"
+
 # Get IPs
-ENVOY_IP=$(terraform output -raw envoy_ip)
+if [ "$USE_GLOBAL" = true ]; then
+    # For global deployment, we don't have a single Envoy IP
+    ENVOY_IP="Global (multiple regions)"
+    echo "🌍 Global deployment complete. Envoy instances deployed in:"
+    echo "   - US Central (us-central1)"
+    echo "   - Europe West (europe-west1)"
+    echo "   - Asia Southeast (asia-southeast1)"
+    echo "   - US East (us-east1)"
+    echo "   - Australia (australia-southeast1)"
+else
+    ENVOY_IP=$(terraform output -raw envoy_ip 2>/dev/null || echo "N/A")
+fi
 LB_IP=$(terraform output -raw load_balancer_ip)
 
 echo ""
@@ -53,7 +118,12 @@ echo "🔧 Setting up test tenant mappings..."
 # Run tests
 echo ""
 echo "🧪 Running tests..."
-"$SCRIPT_DIR/test-deployment.sh" "$ENVOY_IP" "$LB_IP"
+if [ "$USE_GLOBAL" = true ]; then
+    # For global deployment, skip Envoy IP parameter
+    "$SCRIPT_DIR/test-deployment.sh" "" "$LB_IP"
+else
+    "$SCRIPT_DIR/test-deployment.sh" "$ENVOY_IP" "$LB_IP"
+fi
 
 # Display helpful information
 echo ""
@@ -63,6 +133,17 @@ echo "📊 Infrastructure Details:"
 cd "$PROJECT_ROOT/terraform"
 echo "Load Balancer IP: $(terraform output -raw load_balancer_ip 2>/dev/null || echo $LB_IP)"
 echo "GCS Bucket: $(terraform output -raw gcs_bucket 2>/dev/null || echo 'N/A')"
+
+if [ "$USE_GLOBAL" = true ]; then
+    echo ""
+    echo "🌍 Global Deployment Details:"
+    echo "   - Regions: US Central, Europe West, Asia Southeast, US East, Australia"
+    echo "   - Auto-scaling: 2-10 instances per region"
+    echo "   - Cloud CDN: Enabled"
+    echo "   - Cloud Armor DDoS Protection: Enabled"
+    echo "   - Anycast IP routes to nearest Envoy cluster"
+fi
+
 echo ""
 echo "🧪 To test the deployment:"
 echo "  curl -H 'Host: beamreach.example.com' http://$LB_IP/"

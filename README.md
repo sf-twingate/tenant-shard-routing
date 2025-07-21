@@ -9,7 +9,7 @@ Both provide high-performance routing based on hostname extraction and GCS-store
 
 ## Architecture
 
-There is a single main external Application Load Balancer (ALB) that routes incoming requests to an Envoy instance. The Envoy instance applies tenant routing logic based on the hostname of the request to determine the appropriate shard. The tenant-to-shard mappings are stored in a Google Cloud Storage (GCS) bucket.
+The solution uses a main external Application Load Balancer (ALB) that routes incoming requests to Envoy instance(s). The Envoy instance applies tenant routing logic based on the hostname of the request to determine the appropriate shard. The tenant-to-shard mappings are stored in a Google Cloud Storage (GCS) bucket.
 
 Each shard has its own Application Load Balancer (ALB) that can handle additional routing, as needed. As an example, the shard ALB in this repo routes requests based on path:
 - `/*` → Default service backend
@@ -17,6 +17,23 @@ Each shard has its own Application Load Balancer (ALB) that can handle additiona
 - `/api/*` → API service backend
 
 The Envoy instance can be configured to use either the WASM filter or the Lua filter for tenant routing.
+
+### Single-Region Architecture
+In single-region mode, there is one Envoy instance that handles all traffic:
+```
+User Request → Main ALB → Single Envoy Instance → Shard ALB → Backend Services
+```
+
+### Global Multi-Region Architecture
+In global mode, Envoy instances are deployed across multiple regions with automatic geo-routing:
+```
+User Request → Global ALB (Anycast IP) → Nearest Envoy Cluster → Shard ALB → Backend
+                    ↓                           ↓
+            (Routes to nearest)         (Auto-scales 2-10 instances)
+                    ↓                           ↓
+    Regions: US Central, Europe,      Each region has independent
+    Asia, US East, Australia          scaling and health checks
+```
 
 ### WASM Filter with GCS Proxy
 ```
@@ -40,6 +57,21 @@ User Request → Main ALB → Envoy (Lua) → Shard ALB → Backend Services
                       (tenant mappings)
 ```
 
+## Deployment Options
+
+This solution supports two deployment modes:
+
+### 1. Single-Region Deployment (Default)
+- One Envoy instance in a single region
+- Lower cost, suitable for regional applications
+- Simple to manage and debug
+
+### 2. Global Multi-Region Deployment
+- Envoy instances deployed across multiple regions worldwide
+- Users automatically routed to the nearest Envoy cluster
+- High availability with regional failover
+- Auto-scaling in each region based on load
+
 ## Deployment
 
 Create a `terraform.tfvars` file in the `terraform/` directory with your configuration, based on the provided example:
@@ -54,12 +86,17 @@ Run the deployment script:
 ./scripts/deploy.sh
 ```
 
+The script will ask you to choose between:
+- **Single Instance**: Deploy Envoy in one region (default)
+- **Global**: Deploy Envoy across multiple regions (US, Europe, Asia, etc.)
+
 This will:
 - Create a GCS bucket for tenant mappings
 - Deploy the main Application Load Balancer (ALB)
-- Deploy the Envoy instance with either WASM or Lua filter
+- Deploy the Envoy instance(s) with either WASM or Lua filter
 - Create shard ALBs with backend services
 - Set up health checks and routing rules
+- (Global only) Configure Cloud CDN and Cloud Armor for DDoS protection
 
 Create the tenant mappings in the GCS bucket:
 

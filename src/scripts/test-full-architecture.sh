@@ -23,6 +23,14 @@ echo ""
 ENVOY_IP=$(terraform output -raw envoy_ip 2>/dev/null || echo "")
 LB_IP=$(terraform output -raw load_balancer_ip 2>/dev/null || echo "")
 
+# Check if this is a global deployment
+IS_GLOBAL=false
+if [ -z "$ENVOY_IP" ] && terraform output -json envoy_global_info 2>/dev/null | grep -q "regions_deployed"; then
+    IS_GLOBAL=true
+    ENVOY_IP="GLOBAL"
+    echo -e "${BLUE}Detected global deployment${NC}"
+fi
+
 # Get shard information
 echo -e "${YELLOW}Getting shard ALB information...${NC}"
 SHARDS_JSON=$(terraform output -json shards 2>/dev/null || echo "{}")
@@ -77,22 +85,27 @@ else
     echo ""
 fi
 
-# Test Envoy routing to shard ALBs
-echo -e "${YELLOW}2. Testing Envoy Router (http://$ENVOY_IP)${NC}"
-echo "   (Verifying tenant-based routing to correct shard ALB)"
-echo ""
+# Test Envoy routing to shard ALBs (skip for global deployment)
+if [ "$IS_GLOBAL" != "true" ]; then
+    echo -e "${YELLOW}2. Testing Envoy Router (http://$ENVOY_IP)${NC}"
+    echo "   (Verifying tenant-based routing to correct shard ALB)"
+    echo ""
 
-test_route "beamreach → shard1 default" "http://$ENVOY_IP/" "beamreach.example.com" "1" "default"
-test_route "beamreach → shard1 /foo" "http://$ENVOY_IP/foo" "beamreach.example.com" "1" "foo"
-test_route "beamreach → shard1 /api" "http://$ENVOY_IP/api" "beamreach.example.com" "1" "api"
-test_route "sfco → shard2 default" "http://$ENVOY_IP/" "sfco.example.com" "2" "default"
-test_route "sfco → shard2 /foo" "http://$ENVOY_IP/foo" "sfco.example.com" "2" "foo"
-test_route "sfco → shard2 /api" "http://$ENVOY_IP/api" "sfco.example.com" "2" "api"
-test_route "corp → shard1 default" "http://$ENVOY_IP/" "corp.example.com" "1" "default"
-test_route "corp → shard1 /api" "http://$ENVOY_IP/api" "corp.example.com" "1" "api"
-test_route "foo → shard2 /foo" "http://$ENVOY_IP/foo" "foo.example.com" "2" "foo"
-test_route "foo → shard2 /api" "http://$ENVOY_IP/api" "foo.example.com" "2" "api"
-test_route "unknown → default shard" "http://$ENVOY_IP/" "unknown.example.com" "1" "default"
+    test_route "beamreach → shard1 default" "http://$ENVOY_IP/" "beamreach.example.com" "1" "default"
+    test_route "beamreach → shard1 /foo" "http://$ENVOY_IP/foo" "beamreach.example.com" "1" "foo"
+    test_route "beamreach → shard1 /api" "http://$ENVOY_IP/api" "beamreach.example.com" "1" "api"
+    test_route "sfco → shard2 default" "http://$ENVOY_IP/" "sfco.example.com" "2" "default"
+    test_route "sfco → shard2 /foo" "http://$ENVOY_IP/foo" "sfco.example.com" "2" "foo"
+    test_route "sfco → shard2 /api" "http://$ENVOY_IP/api" "sfco.example.com" "2" "api"
+    test_route "corp → shard1 default" "http://$ENVOY_IP/" "corp.example.com" "1" "default"
+    test_route "corp → shard1 /api" "http://$ENVOY_IP/api" "corp.example.com" "1" "api"
+    test_route "foo → shard2 /foo" "http://$ENVOY_IP/foo" "foo.example.com" "2" "foo"
+    test_route "foo → shard2 /api" "http://$ENVOY_IP/api" "foo.example.com" "2" "api"
+    test_route "unknown → default shard" "http://$ENVOY_IP/" "unknown.example.com" "1" "default"
+else
+    echo -e "${YELLOW}2. Skipping direct Envoy tests (global deployment)${NC}"
+    echo "   In global deployments, Envoy instances are accessed through the load balancer"
+fi
 
 # Test through main Load Balancer
 if [ -n "$LB_IP" ]; then

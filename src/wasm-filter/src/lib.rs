@@ -223,9 +223,11 @@ impl TenantRouter {
     }
 
     fn dispatch_gcs_lookup(&mut self, path: &str) -> Result<u32, Status> {
+        // Add /gcs prefix for the GCS proxy route
+        let proxy_path = format!("/gcs{}", path);
         let headers = vec![
             (":method", "GET"),
-            (":path", path),
+            (":path", &proxy_path),
             (":authority", "localhost:8080"),
             (":scheme", "http"),
         ];

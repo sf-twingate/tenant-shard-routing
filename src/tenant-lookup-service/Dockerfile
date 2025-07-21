@@ -6,8 +6,11 @@ RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static pkgconfig
 
 WORKDIR /usr/src/app
 
+# Copy the core library first
+COPY tenant-routing-core /usr/src/tenant-routing-core
+
 # Copy manifests
-COPY Cargo.toml Cargo.lock ./
+COPY tenant-lookup-service/Cargo.toml tenant-lookup-service/Cargo.lock ./
 
 # Create dummy main to cache dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
@@ -17,7 +20,7 @@ RUN cargo build --release --target x86_64-unknown-linux-musl
 RUN rm -rf src
 
 # Copy source code
-COPY src ./src
+COPY tenant-lookup-service/src ./src
 
 # Build the application statically
 RUN touch src/main.rs && cargo build --release --target x86_64-unknown-linux-musl

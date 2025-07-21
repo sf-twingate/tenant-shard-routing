@@ -11,8 +11,8 @@ module "shard" {
   region          = var.region
   zone            = var.zone
   health_check_id = module.health_checks.health_check_id
-  network         = "default"
-  subnetwork      = null
+  network         = google_compute_network.main.name
+  subnetwork      = google_compute_subnetwork.main.name
 }
 
 # Output shard information for debugging

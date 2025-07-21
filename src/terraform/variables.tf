@@ -18,7 +18,6 @@ variable "zone" {
 variable "name_prefix" {
   description = "Prefix for all resource names"
   type        = string
-  default     = "tenant-routing"
 }
 
 variable "domain" {
@@ -37,6 +36,36 @@ variable "shard_names" {
 # Filter implementation selection
 variable "use_lua_filter" {
   description = "Use Lua filter with tenant lookup service instead of WASM filter"
+  type        = bool
+  default     = false
+}
+
+variable "enable_ssl" {
+  description = "Enable SSL/HTTPS"
+  type        = bool
+  default     = false
+}
+
+variable "ssl_certificate_domains" {
+  description = "Domains for SSL certificate"
+  type        = list(string)
+  default     = []
+}
+
+variable "notification_channel_ids" {
+  description = "List of notification channel IDs for alerts"
+  type        = list(string)
+  default     = []
+}
+
+variable "bigquery_dataset_id" {
+  description = "BigQuery dataset ID for log export"
+  type        = string
+  default     = "envoy_logs"
+}
+
+variable "use_global_deployment" {
+  description = "Deploy Envoy globally across multiple regions"
   type        = bool
   default     = false
 }
