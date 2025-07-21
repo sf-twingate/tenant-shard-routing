@@ -138,6 +138,6 @@ packer build \
 echo -e "${GREEN}✓ Custom Envoy Lua image built successfully!${NC}"
 echo ""
 echo "To use the new image, update the Terraform configuration to use:"
-echo "  source_image = \"envoy-lua-optimized\""
+echo "  source_image = \"envoy-lua\""
 echo "  source_image_project = \"$PROJECT_ID\""
 echo "  use_lua_filter = true"

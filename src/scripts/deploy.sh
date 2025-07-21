@@ -33,50 +33,41 @@ fi
 # Get project ID
 PROJECT_ID=$(gcloud config get-value project)
 
-# Check if we're using optimized image from terraform.tfvars
-USE_OPTIMIZED_IMAGE=$(grep -E "^use_optimized_image\s*=" "$PROJECT_ROOT/terraform/terraform.tfvars" 2>/dev/null | sed 's/.*=\s*//; s/[[:space:]]*//g' || echo "false")
 # Check if we're using Lua filter
 USE_LUA_FILTER=$(grep -E "^use_lua_filter\s*=" "$PROJECT_ROOT/terraform/terraform.tfvars" 2>/dev/null | sed 's/.*=\s*//; s/[[:space:]]*//g' || echo "false")
 
-# If using optimized image, check if it exists and build if needed
-if [ "$USE_OPTIMIZED_IMAGE" = "true" ]; then
-    echo "⚡ Checking for optimized image..."
-    
-    # Determine which image family to check based on filter type
-    if [ "$USE_LUA_FILTER" = "true" ]; then
-        IMAGE_FAMILY="envoy-lua-optimized"
-        BUILD_SCRIPT="build-envoy-lua-image.sh"
+# Always check for and build custom images
+echo "⚡ Checking for custom Envoy image..."
+
+# Determine which image family to check based on filter type
+if [ "$USE_LUA_FILTER" = "true" ]; then
+    IMAGE_FAMILY="envoy-lua"
+    BUILD_SCRIPT="build-envoy-lua-image.sh"
+else
+    IMAGE_FAMILY="envoy-wasm"
+    BUILD_SCRIPT="build-envoy-wasm-image.sh"
+fi
+
+# Check if the image exists (exact family match)
+# Note: gcloud filter does prefix matching, so we need to check the exact family
+IMAGE_EXISTS=$(gcloud compute images list --format="csv[no-heading](name,family)" | grep ",$IMAGE_FAMILY$" | cut -d',' -f1 | head -1)
+
+if [ -z "$IMAGE_EXISTS" ]; then
+    echo "📦 Custom image not found. Building it now (this will take ~10 minutes)..."
+    if [ -f "$SCRIPT_DIR/$BUILD_SCRIPT" ]; then
+        "$SCRIPT_DIR/$BUILD_SCRIPT"
     else
-        IMAGE_FAMILY="envoy-wasm-optimized"
-        BUILD_SCRIPT="build-envoy-wasm-image.sh"
+        echo "❌ Error: $BUILD_SCRIPT not found"
+        exit 1
     fi
-    
-    # Check if the image exists
-    IMAGE_EXISTS=$(gcloud compute images list --filter="family:$IMAGE_FAMILY" --format="value(name)" | head -1)
-    
-    if [ -z "$IMAGE_EXISTS" ]; then
-        echo "📦 Optimized image not found. Building it now (this will take ~10 minutes)..."
-        if [ -f "$SCRIPT_DIR/$BUILD_SCRIPT" ]; then
-            "$SCRIPT_DIR/$BUILD_SCRIPT"
-        else
-            echo "❌ Error: $BUILD_SCRIPT not found"
-            exit 1
-        fi
-    else
-        echo "✅ Found optimized image: $IMAGE_EXISTS"
-    fi
-    
-    if [ "$USE_LUA_FILTER" = "true" ]; then
-        echo "⚡ Using Lua-optimized image with pre-built tenant lookup service"
-    else
-        echo "⚡ Using WASM-optimized image with pre-built WASM filter"
-    fi
-elif [ "$USE_LUA_FILTER" != "true" ] && [ -f "$PROJECT_ROOT/wasm-filter/build.sh" ]; then
-    # Build WASM locally if not using optimized image and not using Lua
-    echo "📦 Building WASM filter locally..."
-    cd "$PROJECT_ROOT/wasm-filter"
-    ./build.sh
-    cd "$PROJECT_ROOT"
+else
+    echo "✅ Found custom image: $IMAGE_EXISTS"
+fi
+
+if [ "$USE_LUA_FILTER" = "true" ]; then
+    echo "⚡ Using Lua image with pre-built tenant lookup service"
+else
+    echo "⚡ Using WASM image with pre-built WASM filter"
 fi
 
 # Deploy infrastructure
@@ -95,32 +86,16 @@ if [ -z "$GCS_BUCKET" ]; then
     exit 1
 fi
 
-# Upload WASM to the GCS bucket before creating instances (only if not using optimized image and using WASM)
-if [ "$USE_LUA_FILTER" != "true" ]; then
-    if [ "$USE_OPTIMIZED_IMAGE" != "true" ]; then
-        if [ -f "$PROJECT_ROOT/tenant-router.wasm" ]; then
-            echo "📤 Uploading WASM filter to GCS bucket: $GCS_BUCKET..."
-            gsutil cp "$PROJECT_ROOT/tenant-router.wasm" "gs://${GCS_BUCKET}/wasm/tenant-router.wasm"
-            echo "✅ WASM filter uploaded to gs://${GCS_BUCKET}/wasm/tenant-router.wasm"
-        else
-            echo "⚠️ WASM file not found at $PROJECT_ROOT/tenant-router.wasm"
-        fi
-    else
-        echo "⚡ Using WASM-optimized image - WASM is pre-built in the image"
-    fi
+# No need to upload WASM or build services - everything is in the custom images
+if [ "$USE_LUA_FILTER" = "true" ]; then
+    echo "🌐 Using Lua filter - tenant lookup service is pre-built in the image"
 else
-    echo "🌐 Using Lua filter - no WASM upload needed"
+    echo "⚡ Using WASM filter - WASM is pre-built in the image"
 fi
 
 # Now deploy the rest of the infrastructure
 echo "🚀 Deploying remaining infrastructure..."
 terraform apply -auto-approve -var="use_global_deployment=$USE_GLOBAL"
-
-# Build and upload tenant lookup service if needed (Lua filter without optimized image)
-if [ "$USE_LUA_FILTER" = "true" ] && [ "$USE_OPTIMIZED_IMAGE" != "true" ]; then
-    echo "📦 Building tenant lookup service..."
-    "$SCRIPT_DIR/build-tenant-lookup.sh"
-fi
 
 # Return to terraform directory to get outputs
 cd "$PROJECT_ROOT/terraform"

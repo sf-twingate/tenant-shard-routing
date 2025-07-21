@@ -49,10 +49,8 @@ module "envoy" {
   shard_backends         = module.shard
   gcs_bucket_name        = module.gcs.bucket_name
   service_account_email  = google_service_account.envoy.email
-  wasm_filter_path       = "${path.module}/../wasm-filter"
   use_lua_filter         = var.use_lua_filter
   project_id             = var.project_id
-  use_optimized_image    = var.use_optimized_image
 }
 
 # Main load balancer module (single-region)
@@ -127,8 +125,6 @@ module "envoy_global" {
 
   # Use Lua filter by default
   use_lua_filter   = var.use_lua_filter
-  wasm_filter_path = var.use_lua_filter ? "" : "${path.module}/../wasm-filter"
-  use_optimized_image = var.use_optimized_image
 
   # Enable security features
   enable_cdn         = true

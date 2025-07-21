@@ -20,8 +20,8 @@ source "googlecompute" "envoy-wasm-base" {
   project_id          = var.project_id
   source_image_family = "ubuntu-2204-lts"
   zone                = var.zone
-  image_name          = "envoy-wasm-optimized-{{timestamp}}"
-  image_family        = "envoy-wasm-optimized"
+  image_name          = "envoy-wasm-{{timestamp}}"
+  image_family        = "envoy-wasm"
   machine_type        = "e2-standard-2"  # Need more power for building
   disk_size           = 20
   ssh_username        = "ubuntu"

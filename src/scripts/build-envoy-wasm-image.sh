@@ -147,6 +147,6 @@ packer build \
 echo -e "${GREEN}✓ Custom Envoy WASM image built successfully!${NC}"
 echo ""
 echo "To use the new image, update the Terraform configuration to use:"
-echo "  source_image = \"envoy-wasm-optimized\""
+echo "  source_image = \"envoy-wasm\""
 echo "  source_image_project = \"$PROJECT_ID\""
 echo "  use_lua_filter = false"

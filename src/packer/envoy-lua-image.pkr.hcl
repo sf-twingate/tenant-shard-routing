@@ -20,8 +20,8 @@ source "googlecompute" "envoy-lua-base" {
   project_id          = var.project_id
   source_image_family = "ubuntu-2204-lts"
   zone                = var.zone
-  image_name          = "envoy-lua-optimized-{{timestamp}}"
-  image_family        = "envoy-lua-optimized"
+  image_name          = "envoy-lua-{{timestamp}}"
+  image_family        = "envoy-lua"
   machine_type        = "e2-standard-2"
   disk_size           = 20
   ssh_username        = "ubuntu"

@@ -86,11 +86,6 @@ variable "use_lua_filter" {
   default     = false
 }
 
-variable "wasm_filter_path" {
-  description = "Path to WASM filter source code"
-  type        = string
-  default     = ""
-}
 
 variable "enable_cdn" {
   description = "Enable Cloud CDN for static content"
@@ -102,9 +97,4 @@ variable "enable_cloud_armor" {
   description = "Enable Cloud Armor for DDoS protection"
   type        = bool
   default     = true
-}
-variable "use_optimized_image" {
-  description = "Use pre-built optimized VM image with Docker pre-installed"
-  type        = bool
-  default     = false
 }

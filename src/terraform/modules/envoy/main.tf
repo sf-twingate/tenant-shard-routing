@@ -21,9 +21,7 @@ resource "google_compute_instance" "envoy_router" {
 
   boot_disk {
     initialize_params {
-      image = var.use_optimized_image ? (
-        var.use_lua_filter ? "${var.project_id}/envoy-lua-optimized" : "${var.project_id}/envoy-wasm-optimized"
-      ) : "ubuntu-os-cloud/ubuntu-2204-lts"
+      image = var.use_lua_filter ? "${var.project_id}/envoy-lua" : "${var.project_id}/envoy-wasm"
     }
   }
 
@@ -43,12 +41,6 @@ resource "google_compute_instance" "envoy_router" {
       shard_names     = var.shard_names
       shard_backends  = var.shard_backends
       project_id      = var.project_id
-    }) : var.use_optimized_image ? templatefile("${path.module}/templates/envoy-wasm-startup-optimized.sh.tpl", {
-      envoy_config    = local.envoy_config
-      shard_names     = var.shard_names
-      shard_backends  = var.shard_backends
-      project_id      = var.project_id
-      gcs_bucket_name = var.gcs_bucket_name
     }) : templatefile("${path.module}/templates/envoy-wasm-startup.sh.tpl", {
       envoy_config    = local.envoy_config
       shard_names     = var.shard_names

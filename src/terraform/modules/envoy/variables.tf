@@ -46,10 +46,6 @@ variable "subnetwork" {
   default     = null
 }
 
-variable "wasm_filter_path" {
-  description = "Path to WASM filter source directory"
-  type        = string
-}
 
 variable "use_lua_filter" {
   description = "Use Lua filter with Rust service instead of WASM filter"
@@ -62,8 +58,3 @@ variable "project_id" {
   type        = string
 }
 
-variable "use_optimized_image" {
-  description = "Use pre-built optimized VM image with Docker pre-installed"
-  type        = bool
-  default     = false
-}
